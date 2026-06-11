@@ -1,0 +1,12 @@
+local s = require("shell")
+local comp = require("computer")
+local os = require("os")
+
+shell.execute("wget -f https://raw.githubusercontent.com/XDevster/TenWeb/refs/heads/main/browser.lua /bin/browser.lua")
+shell.execute("wget -f https://raw.githubusercontent.com/XDevster/TenWeb/refs/heads/main/dns.lua /bin/dns.lua")
+shell.execute("wget -f https://raw.githubusercontent.com/XDevster/TenWeb/refs/heads/main/ping.lua /bin/ping.lua")
+shell.execute("wget -f https://raw.githubusercontent.com/XDevster/TenWeb/refs/heads/main/router.lua /bin/router.lua")
+shell.execute("wget -f https://raw.githubusercontent.com/XDevster/TenWeb/refs/heads/main/webserver.lua /bin/webserver.lua")
+print("Установка завершена!")
+os.sleep(0.5)
+comp.shutdown("true")
