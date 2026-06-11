@@ -1,4 +1,4 @@
-local s = require("shell")
+local shell = require("shell") -- Я даун и написал там букву s. А сам писал shell
 local comp = require("computer")
 local os = require("os")
 
