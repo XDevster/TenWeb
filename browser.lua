@@ -15,37 +15,48 @@ local COLOR_UI = 0x555555
 local click_zones = {}
 
 local function get_page(url)
-  if m.isWireless() then
-    m.setStrength(5)
-  end
+  local my_addr = m.address
 
-  m.broadcast(80, serial.serialize({type="DNS_REQ", host=url}))
+  -- Очищаем очередь от старого мусора перед отправкой
+  while event.pull(0, "modem_message") do end
+
+  -- Шлем запрос и обязательно прикрепляем свой адрес
+  m.broadcast(80, serial.serialize({type="DNS_REQ", host=url, client_addr=my_addr}))
   
   local deadline = computer.uptime() + 5
   local target_ip = nil
+  
   while computer.uptime() < deadline do
-    local _, _, _, _, _, msg = event.pull(1, "modem_message")
-    local success, res = pcall(serial.unserialize, msg or "")
-    if success and res and res.type == "DNS_RES" then
-      target_ip = res.ip
-      break
+    local _, _, sender, _, _, msg = event.pull(1, "modem_message")
+    
+    -- Игнорируем пакеты от самого себя
+    if sender and sender ~= my_addr then
+      local success, res = pcall(serial.unserialize, msg or "")
+      -- Проверяем, что ответ успешный, это DNS_RES и он предназначен ИМЕННО НАМ (receiver == my_addr)
+      if success and res and res.type == "DNS_RES" and res.receiver == my_addr then
+        target_ip = res.ip
+        break
+      end
     end
   end
 
   if not target_ip then return "<h1>Ошибка 404</h1>\nДомен не найден в сети." end
   
-  if m.isWireless() then
-    m.setStrength(5)
-  end
-  m.broadcast(80, serial.serialize({type="GET", target=target_ip}))
+  while event.pull(0, "modem_message") do end
+  
+  -- Шлем GET-запрос (также вещаем с указанием, кому он)
+  m.broadcast(80, serial.serialize({type="GET", target=target_ip, client_addr=my_addr}))
   
   deadline = computer.uptime() + 5
   while computer.uptime() < deadline do
-    local _, _, _, _, _, msg = event.pull(1, "modem_message")
-    local success, p_res = pcall(serial.unserialize, msg or "")
+    local _, _, sender, _, _, msg = event.pull(1, "modem_message")
     
-    if success and p_res and p_res.type == "HTTP_RES" then 
-      return p_res.body
+    if sender and sender ~= my_addr then
+      local success, p_res = pcall(serial.unserialize, msg or "")
+      -- Веб-сервер также должен отвечать с полем receiver
+      if success and p_res and p_res.type == "HTTP_RES" and p_res.receiver == my_addr then 
+        return p_res.body
+      end
     end
   end
   
