@@ -36,8 +36,10 @@ local function handleMessage(_, _, sender, port, _, msg)
   if success and data and data.type == "DNS_REQ" then
     local ip = dns_table[data.host]
     if ip then
-      m.send(sender, 80, serial.serialize({type="DNS_RES", ip=ip}))
-      print(string.format("[СЕТЬ] %s -> %s (Отправлено на %s)", tostring(data.host), tostring(ip), sender:sub(1,4)))
+      local real_client = data.client_addr or sender
+
+      m.send(real_client, 80, serial.serialize({type="DNS_RES", ip=ip}))
+      print(string.format("[СЕТЬ] %s -> %s (Отправлено на %s)", tostring(data.host), tostring(ip), real_client:sub(1,4)))
     else
       print(string.format("[СЕТЬ] %s -> НЕ НАЙДЕНО", tostring(data.host)))
     end
