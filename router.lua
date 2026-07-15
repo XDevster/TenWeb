@@ -12,7 +12,6 @@ while true do
     m.broadcast(80, msg)
   else
     tunnel.send(msg)
-    m.broadcast(80, msg)
-    print("Пакет отправлен")
+    print("Пакет перенаправлен в туннель.")
   end
 end
